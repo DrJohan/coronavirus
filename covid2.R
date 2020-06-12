@@ -71,6 +71,8 @@ corona_sea2 %>% ggplot(aes(y = cases, x = date, fill = country)) + geom_col() +
   facet_grid(~ country)
 
 corona_sea %>% ggplot(aes(y = cases, x = date, fill = type)) + geom_bar(stat = "identity") +
-  facet_grid(~ country)
+  labs(title= "Cumulative Number of COVID-19 Cases in Selected South East Asia Country",
+       y="Number of Cases", x = "Date")
++facet_grid(~ country)
 
 
