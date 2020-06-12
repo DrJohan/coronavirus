@@ -70,5 +70,7 @@ corona_sea %>% ggplot(aes(y = cases, x = date, color = country)) + geom_col() +
 corona_sea2 %>% ggplot(aes(y = cases, x = date, fill = country)) + geom_col() +
   facet_grid(~ country)
 
- 
+corona_sea %>% ggplot(aes(y = cases, x = date, fill = type)) + geom_bar(stat = "identity") +
+  facet_grid(~ country)
+
 
