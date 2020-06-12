@@ -37,11 +37,13 @@ write_csv(coronavirus, 'coronavirus.csv')
 
 # Select Malaysia for country 
 MYS_covid <- coronavirus %>% filter(country == "Malaysia")
+MYS_covid19 <- covid19 %>% filter(country == "Malaysia")
+
 
 # Make a simple line plot to look for trend
 MYS_covid %>% ggplot(aes(y = cases, x = date, color = country)) + geom_line()
 # Make a simple column plot to look for trend
-MYS_covid %>% ggplot(aes(y = cases, x = date)) + geom_col()
+MYS_covid19 %>% ggplot(aes(y = cases, x = date)) + geom_col()
 
 # selected countries
 corona_sea <- coronavirus %>% 
@@ -51,6 +53,14 @@ corona_sea2 <- coronavirus %>%
   filter(country %in% c("Malaysia", "Thailand", "Singapore", "Indonesia")) %>% 
   filter(type == "confirmed")
   
+corona_sea3 <- coronavirus %>% 
+  filter(country %in% c("Malaysia", "Thailand", "Singapore", "Indonesia")) %>% 
+  filter(type == "recovered")
+
+corona_sea4 <- coronavirus %>% 
+  filter(country %in% c("Malaysia", "Thailand", "Singapore", "Indonesia")) %>% 
+  filter(type == "death")
+
 
 
 ## confirmed cases per country
