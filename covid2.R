@@ -14,6 +14,7 @@
 
 library(tidyverse)
 library(coronavirus)
+library(formattable)
 
 ####---- get coronavirus data ----####
 data(coronavirus)
@@ -44,7 +45,7 @@ MYS_covid19 <- covid19 %>% filter(country == "Malaysia")
 MYS_covid %>% ggplot(aes(y = cases, x = date, color = country)) + geom_line()
 # Make a simple column plot to look for trend
 MYS_covid19 %>% ggplot(aes(y = cases, x = date)) + geom_col()
-
+formattable(MYS_covid19)
 # selected countries
 corona_sea <- coronavirus %>% 
   filter(country %in% c("Malaysia", "Thailand", "Singapore", "Indonesia"))
@@ -72,7 +73,6 @@ corona_sea2 %>% ggplot(aes(y = cases, x = date, fill = country)) + geom_col() +
 
 corona_sea %>% ggplot(aes(y = cases, x = date, fill = type)) + geom_bar(stat = "identity") +
   labs(title= "Cumulative Number of COVID-19 Cases in Selected South East Asia Country",
-       y="Number of Cases", x = "Date")
-+facet_grid(~ country)
+       y="Number of Cases", x = "Date") + facet_grid(~ country)
 
 
