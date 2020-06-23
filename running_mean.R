@@ -52,3 +52,15 @@ ggplot(covid_sea2, aes(x = date, y = cases, colour = country)) +
 ggplot(covid_sea2, aes(x = date, y = cases, colour = country)) +
   geom_line() +
   geom_line(aes(x = date, y = weekly, group = country), colour = "red")
+
+
+# plot daily case + rolling weekly by country
+covid_plot <- ggplot(covid_sea2) + 
+  geom_line(aes(x = date, y = cases), colour = "green") +
+  geom_line(aes(x = date, y = weekly), colour = "orange") + facet_grid(~ country)
+
+#adding labels and graph title
+covid_plot + xlab("Date") + ylab("Cases") +
+  ggtitle("Number of Covid19 confirmed cases by country \n : Daily(green) and 7-day rolling average (orange)") +
+  theme_light()
+
