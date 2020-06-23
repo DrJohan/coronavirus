@@ -3,6 +3,7 @@
 library(tidyverse)
 library(runner)
 library(coronavirus)
+library(formattable)
 
 ## import latest dataset from github
 
@@ -43,6 +44,7 @@ covid_sea2 <- bind_cols(covid_sea, covid19_weekly)
 
 covid_sea2 <- covid_sea2 %>% select(-country...8) %>% 
   rename(country = country...3)
+formattable(covid_sea2)
 
 # plot daily cases
 ggplot(covid_sea2, aes(x = date, y = cases, colour = country)) +
