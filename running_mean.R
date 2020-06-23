@@ -21,3 +21,34 @@ covid19 <- as_tibble(covid_latest) # converting to tibble
 covid_sea <- covid19 %>% 
   filter(type== "confirmed", country %in% c("Malaysia", "Thailand", "Singapore", "Indonesia", "Philippines", "Vietnam"))
 
+covid_mal <- covid_sea %>% 
+  filter(country == "Malaysia") %>% 
+  mutate(one_week = runner(
+    x = cases,
+    k = "1 week",
+    idx = date, 
+    f = mean
+    
+  ))
+
+covid19_weekly <- covid_sea %>% group_by(country) %>%
+  group_modify(~ data.frame(weekly = runner(
+    x = .x$cases, 
+    k = "1 week",
+    idx = .x$date, 
+    f = mean
+  )))
+
+covid_sea2 <- bind_cols(covid_sea, covid19_weekly)
+
+covid_sea2 <- covid_sea2 %>% select(-country...8) %>% 
+  rename(country = country...3)
+
+# plot daily cases
+ggplot(covid_sea2, aes(x = date, y = cases, colour = country)) +
+  geom_line()
+
+#plot daily case + rolling weekly average
+ggplot(covid_sea2, aes(x = date, y = cases, colour = country)) +
+  geom_line() +
+  geom_line(aes(x = date, y = weekly, group = country), colour = "red")
