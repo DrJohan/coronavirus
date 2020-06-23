@@ -64,5 +64,6 @@ covid_plot <- ggplot(covid_sea2) +
 #adding labels and graph title
 covid_plot + xlab("Date") + ylab("Cases") +
   ggtitle("Number of Covid19 confirmed cases by country \n : Daily(green) and 7-day rolling average (orange)") +
+  theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 
