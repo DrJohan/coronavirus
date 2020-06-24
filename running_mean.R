@@ -4,6 +4,7 @@ library(tidyverse)
 library(runner)
 library(coronavirus)
 library(formattable)
+library(plotly)
 
 ## import latest dataset from github
 
@@ -67,3 +68,5 @@ covid_plot + xlab("Date") + ylab("Cases") +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 
+covid_interactive <- ggplotly(covid_plot)
+covid_interactive
