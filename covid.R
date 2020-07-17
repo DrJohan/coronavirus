@@ -14,7 +14,7 @@
 
 library(tidyverse)
 library(coronavirus)
-
+coronavirus::update_dataset()
 ####---- get coronavirus data ----####
 data(coronavirus)
 

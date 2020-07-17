@@ -15,7 +15,7 @@
 library(tidyverse)
 library(coronavirus)
 library(formattable)
-
+coronavirus::update_dataset()
 ####---- get coronavirus data ----####
 data(coronavirus)
 
