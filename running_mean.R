@@ -16,7 +16,7 @@ covid_latest <- read_csv("https://raw.githubusercontent.com/RamiKrispin/coronavi
 ## using built in dataset from coronavirus package 
 ## glimpse(coronavirus)
 ##view(covid_latest)
-
+glimpse(covid_latest)
 covid19 <- as_tibble(covid_latest) # converting to tibble
 
 
