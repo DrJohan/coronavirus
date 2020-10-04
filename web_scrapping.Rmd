@@ -1,0 +1,167 @@
+---
+title: "Malaysia Covid-19 Web Scrapping"
+author: "Dr Johan Ibrahim"
+date: "10/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# About
+I find it tedious to manually update and maintain Excel files of Covid-19 situation in Malaysia. The Director General of Health releases daily press statement in the website, in text format (only some info in Table): https://kpkesihatan.com/
+
+For data analysis, data in structured format is prefered, but this is not readily available from the source. Thus, the data must be updated manually everyday from the website or by listening to the press conference.
+
+In this Gist, I share a method to scrape data from the web page of the daily update in R.
+
+# Required packages
+```R
+library(rvest)
+library(stringr)
+library(xlsx)
+library(readxl)
+```
+
+# Getting the URL
+I automate the URL generation to match the date today, based on the patterns of the URL:
+```R
+my_date = Sys.Date()
+my_day = format(as.Date(my_date), "%d")
+my_day_no = as.numeric(my_day)
+my_mo = format(as.Date(my_date), "%m")
+my_mo_no = as.numeric(my_mo)
+my_mo_list = c("januari", "februari", "mac", "april", "mei", "jun", "julai", "ogos", "september", "oktober", "november", "disember")
+kpk_url = paste0("https://kpkesihatan.com/2020/", my_mo, "/", my_day, "/kenyataan-akhbar-kpk-", my_day_no,
+"-", my_mo_list[my_mo_no], "-2020-situasi-semasa-jangkitan-penyakit-coronavirus-2019-covid-19-di-malaysia/")
+kpk_url1 = paste0("https://kpkesihatan.com/2020/", my_mo, "/", my_day, "/kenyataan-akhbar-", my_day_no,
+                 "-", my_mo_list[my_mo_no], "-2020-situasi-semasa-jangkitan-penyakit-coronavirus-2019-covid-19-di-malaysia/")
+```
+
+# Read the page, test any of the URLs
+```R
+kpk_page = try(read_html(kpk_url), T)
+if (class(kpk_page) == "try-error") {kpk_page = try(read_html(kpk_url1), T)} else {kpk_page}
+str(kpk_page)  # make sure html page is loaded, not error
+```
+
+# Read the table
+In the page towards the end, there will be two tables detailing the daily new cases by state. Tables: 1 - Malay, 2 - English. Sometimes the English one is not available, thus better stick to 1. There is also total cases for all states, which we can use to get new cases.
+```R
+my_cases = html_nodes(kpk_page, "table")[1]
+my_table = html_table(my_cases, fill = T, header = T)
+my_table = as.data.frame(my_table)
+```
+
+# Read the text
+This is where things get more challenging. We need to obtain, the number of new recovery, ICU, respiratory support and death.
+```R
+my_text = html_nodes(kpk_page, "p")
+html_text(my_text)
+```
+
+# Get the numbers for whole Malaysia
+
+## New cases
+```R
+new_cases = my_table[17, 2]  # more reliable from table
+```
+
+## Recover
+```R
+loc = grep("kes yang telah pulih", html_text(my_text), ignore.case = T)
+pulih = html_nodes(my_text[loc], "strong")[1]
+recover = as.numeric(word(html_text(pulih, trim = T)))
+```
+
+## ICU and respiratory support
+```R
+str_split(html_text(my_text[4]), " ")
+
+loc = grep("sedang dirawat di Unit Rawatan Rapi", html_text(my_text), ignore.case = T)
+urr = html_nodes(my_text[loc], "strong")[1]
+icu = as.numeric(word(html_text(urr, trim = T)))
+
+loc = grep("kes memerlukan bantuan pernafasan", my_text, ignore.case = T)
+bantuan = grep("bantuan", str_split(html_text(my_text[loc]), " ", simplify = T))
+support = as.numeric(word(html_text(my_text[loc]), bantuan - 3))
+```
+
+## Death
+For death, we need to find <li> in the text, and use the right one.
+```R
+my_li = html_nodes(kpk_page, "li")
+loc = grep("Kes kematian", my_li)
+
+new_deaths = length(loc)
+```
+
+# Data frame for daily update for whole Malaysia
+```R
+data_all = data.frame(date=my_date, location="Malaysia", new_cases=new_cases, new_deaths=new_deaths, 
+                      total_cases=NA, total_deaths=NA, recover=recover, total_recover=NA, 
+                      icu=icu, support=support)
+data_all
+```
+
+# Update existing xls [whole Malaysia]
+I keep the data in an Excel file, named "covid-19_my_full.xls", which I update daily before reading it into R.
+```R
+# read prexisting xls first, the append new row to existing dataframe
+data_temp = read_xls("covid-19_my_full.xls")
+data_temp = rbind(data_temp, data_all)
+data_temp = as.data.frame(data_temp)
+
+# write to xls, change to your file name
+write.xlsx2(data_temp, "covid-19_my_full.xls", sheet = "main", showNA = F, row.names = F)
+```
+
+# Get the numbers for each state in Malaysia
+Now we're done with the data for the whole Malaysia, we want to get the numbers for each state.
+
+## New cases
+This is easily obtained from the table *my_table*.
+```R
+colnames(my_table) = c("state", "new_cases", "total_cases")
+my_table[,2] = as.numeric(str_remove_all(my_table[,2], ","))  # remove ","
+my_table[,3] = as.numeric(str_remove_all(my_table[,3], ","))  # remove ","
+data_state = my_table
+```
+
+## Deaths
+This is the most difficult part of the web scraping. The place of death is not consistently mentioned in the text. Sometimes the name of the hospital is mentioned together with the name of the state. Sometimes only the name of the hospital is mentioned. Thus this part can be improved over time. For the basic block, we will again use the <li> *my_li* that we obtain earlier.
+```R
+# deaths by state [trial]
+negeri = c("Perlis", "Kedah", "Pulau Pinang", "Perak", "Selangor", "Negeri Sembilan", "Melaka", "Johor", "Pahang", "Terengganu", "Kelantan", "Sabah", "Sarawak", "Kuala Lumpur", "Putrajaya", "Labuan")
+negeri_text = str_flatten(html_text(my_li[loc]))
+# replacements, add more replacement list over time
+negeri_text = str_replace(negeri_text, "Universiti Malaya", "Kuala Lumpur")
+negeri_text = str_replace(negeri_text, "Hospital Sungai Buloh, Selangor", "-, Selangor")
+negeri_text = str_replace(negeri_text, "Hospital Sungai Buloh", "Selangor")
+negeri_text = str_replace(negeri_text, "Hospital Selayang, Selangor", "-, Selangor")
+negeri_text = str_replace(negeri_text, "Hospital Selayang", "Selangor")
+negeri_text = str_replace(negeri_text, "Kuching, Sarawak", "-")
+negeri_text = str_replace(negeri_text, "daripada Perlis", "-")
+# count the states
+new_deaths_state = str_count(negeri_text, negeri); new_deaths_state
+```
+Known issues with the method:
+
+- state name not mentioned.
+- multiple mention of state name in text.
+
+Now add the death count to the *data_state*:
+```R
+data_state$new_deaths = c(new_deaths_state, sum(new_deaths_state))
+data_state
+```
+
+# Update existing xls [state]
+I keep the data in an Excel file, named "covid-19_my_state.xls", which I update daily before reading it into R. I keep the newly fetched data into a new sheet, named in %Y%m%d format, e.g. 20200415. This will change to the date today.
+```R
+write.xlsx2(data_state, "covid-19_my_state.xls", sheetName = paste0(format(as.Date(my_date), "%Y%m%d")), append = T, showNA = F, row.names = F)
+```
+
+# Conclusion
+Using the method, it will make the process of getting new data easier, without having to read the press release in detail. This can be easily integrated in any analysis workflow in R.
